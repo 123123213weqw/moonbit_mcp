@@ -1,0 +1,374 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "123123213weqw/moonbit_mcp"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn content_blocks_to_json(Array[ContentBlock]) -> Json
+
+pub let implementation_error_start : Int
+
+pub let internal_error_code : Int
+
+pub let invalid_params_code : Int
+
+pub let invalid_request_code : Int
+
+pub let json_rpc_version : String
+
+pub let latest_protocol_version : String
+
+pub fn message_to_string(RpcMessage) -> String
+
+pub let method_cancelled : String
+
+pub let method_initialize : String
+
+pub let method_initialized : String
+
+pub let method_logging_message : String
+
+pub let method_logging_set_level : String
+
+pub let method_not_found_code : Int
+
+pub let method_ping : String
+
+pub let method_progress : String
+
+pub let method_prompts_get : String
+
+pub let method_prompts_list : String
+
+pub let method_prompts_list_changed : String
+
+pub let method_resources_list : String
+
+pub let method_resources_list_changed : String
+
+pub let method_resources_read : String
+
+pub let method_resources_subscribe : String
+
+pub let method_resources_templates_list : String
+
+pub let method_resources_updated : String
+
+pub let method_tools_call : String
+
+pub let method_tools_list : String
+
+pub let method_tools_list_changed : String
+
+pub let parse_error_code : Int
+
+pub fn parse_message(String) -> Result[RpcMessage, McpError]
+
+pub let resource_not_found_code : Int
+
+pub fn[T : Transport] send_and_return(T, String) -> T
+
+pub fn[T : Transport] send_message(T, String) -> Unit
+
+pub fn text_content(String) -> ContentBlock
+
+pub fn tools_to_json(Array[Tool]) -> Json
+
+// Errors
+
+// Types and methods
+pub(all) enum Audience {
+  AudienceUser
+  AudienceAssistant
+} derive(Eq, @debug.Debug)
+
+pub(all) struct BufferedTransport {
+  mut sent : Array[String]
+  mut closed : Bool
+}
+pub fn BufferedTransport::close(Self) -> Unit
+pub fn BufferedTransport::messages(Self) -> Array[String]
+pub fn BufferedTransport::new() -> Self
+
+pub(all) struct CallToolResult {
+  content : Array[ContentBlock]
+  structured_content : Json?
+  is_error : Bool
+} derive(Eq, @debug.Debug)
+pub fn CallToolResult::error(String) -> Self
+pub fn CallToolResult::text(String) -> Self
+pub fn CallToolResult::to_json(Self) -> Json
+
+pub(all) struct ContentAnnotations {
+  audience : Array[Audience]
+  priority : Double?
+  last_modified : String?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ContentBlock {
+  TextContent(String, ContentAnnotations?)
+  ImageContent(String, String, ContentAnnotations?)
+  AudioContent(String, String, ContentAnnotations?)
+  ResourceLink(String, String, String?, String?, String?, ContentAnnotations?)
+  EmbeddedResource(ResourceContents, ContentAnnotations?)
+} derive(Eq, @debug.Debug)
+pub fn ContentBlock::as_text(Self) -> String?
+pub fn ContentBlock::to_json(Self) -> Json
+
+pub(all) struct GetPromptResult {
+  description : String?
+  messages : Array[PromptMessage]
+} derive(Eq, @debug.Debug)
+pub fn GetPromptResult::to_json(Self) -> Json
+
+pub(all) struct Implementation {
+  name : String
+  title : String?
+  version : String
+} derive(Eq, @debug.Debug)
+pub fn Implementation::to_json(Self) -> Json
+
+pub(all) struct InMemoryTransport {
+  mut handler : ((String) -> Unit)?
+  mut closed : Bool
+  mut peer : InMemoryTransport?
+}
+pub fn InMemoryTransport::close(Self) -> Unit
+pub fn InMemoryTransport::on_message(Self, (String) -> Unit) -> Unit
+pub fn InMemoryTransport::pair() -> (Self, Self)
+
+pub(all) struct JsonSchema {
+  mut typ : SchemaType
+  mut description : String?
+  mut properties : Map[String, SchemaProperty]
+  mut required : Array[String]
+} derive(Eq, @debug.Debug)
+pub fn JsonSchema::boolean(Self, String) -> Self
+pub fn JsonSchema::describe(Self, String) -> Self
+pub fn JsonSchema::integer(Self, String) -> Self
+pub fn JsonSchema::number(Self, String) -> Self
+pub fn JsonSchema::object() -> Self
+pub fn JsonSchema::optional_string(Self, String) -> Self
+pub fn JsonSchema::string(Self, String) -> Self
+pub fn JsonSchema::string_desc(Self, String, String) -> Self
+pub fn JsonSchema::to_json(Self) -> Json
+
+pub(all) enum LogLevel {
+  LevelDebug
+  LevelInfo
+  LevelNotice
+  LevelWarning
+  LevelError
+  LevelCritical
+  LevelAlert
+  LevelEmergency
+} derive(Eq, @debug.Debug)
+pub fn LogLevel::to_string(Self) -> String
+
+pub(all) struct LogMessage {
+  level : LogLevel
+  logger : String?
+  data : Json
+} derive(Eq, @debug.Debug)
+pub fn LogMessage::to_json(Self) -> Json
+
+pub(all) enum McpError {
+  RpcError(Int, String)
+  ParseError(String)
+  TransportError(String)
+  ProtocolError(String)
+  UnknownMethod(String)
+  UnknownTarget(String)
+  InvalidArguments(String)
+} derive(Eq, @debug.Debug)
+pub fn McpError::to_code(Self) -> Int
+pub fn McpError::to_message(Self) -> String
+
+pub(all) struct McpServer {
+  server : Server
+  mut tools : Array[Tool]
+  mut tool_callbacks : Map[String, (Json) -> CallToolResult]
+}
+pub fn McpServer::inner(Self) -> Server
+pub fn McpServer::new(String, String) -> Self
+pub fn McpServer::process_message(Self, String) -> String?
+pub fn McpServer::tool(Self, String, JsonSchema, (Json) -> CallToolResult) -> Self
+pub fn McpServer::tool_desc(Self, String, String, JsonSchema, (Json) -> CallToolResult) -> Self
+
+pub(all) struct Paginated[T] {
+  items : Array[T]
+  next_cursor : String?
+} derive(Eq, @debug.Debug)
+pub fn[T] Paginated::new(Array[T]) -> Self[T]
+pub fn[T] Paginated::with_cursor(Array[T], String) -> Self[T]
+
+pub(all) struct Prompt {
+  name : String
+  title : String?
+  description : String?
+  arguments : Array[PromptArgument]
+} derive(Eq, @debug.Debug)
+pub fn Prompt::arg(Self, String, Bool) -> Self
+pub fn Prompt::new(String) -> Self
+pub fn Prompt::to_json(Self) -> Json
+
+pub(all) struct PromptArgument {
+  name : String
+  description : String?
+  required : Bool
+} derive(Eq, @debug.Debug)
+
+pub(all) struct PromptMessage {
+  role : PromptRole
+  content : ContentBlock
+} derive(Eq, @debug.Debug)
+
+pub(all) enum PromptRole {
+  RoleUser
+  RoleAssistant
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ReadResourceResult {
+  contents : Array[ResourceContents]
+} derive(Eq, @debug.Debug)
+pub fn ReadResourceResult::text(String, String) -> Self
+pub fn ReadResourceResult::to_json(Self) -> Json
+
+pub(all) enum RequestId {
+  IdInt(Int)
+  IdString(String)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Resource {
+  uri : String
+  name : String
+  title : String?
+  description : String?
+  mime_type : String?
+} derive(Eq, @debug.Debug)
+pub fn Resource::new(String, String) -> Self
+pub fn Resource::to_json(Self) -> Json
+
+pub(all) enum ResourceContents {
+  TextResourceContents(String, String?, String)
+  BlobResourceContents(String, String?, String)
+} derive(Eq, @debug.Debug)
+pub fn ResourceContents::to_json(Self) -> Json
+
+pub(all) struct ResourceTemplate {
+  uri_template : String
+  name : String
+  title : String?
+  description : String?
+  mime_type : String?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct RpcErrorObject {
+  code : Int
+  message : String
+  data : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum RpcMessage {
+  MsgRequest(RpcRequest)
+  MsgResponse(RpcResponse)
+  MsgNotification(RpcNotification)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct RpcNotification {
+  method_name : String
+  params : Json?
+} derive(Eq, @debug.Debug)
+pub fn RpcNotification::method_str(Self) -> String
+pub fn RpcNotification::to_json(Self) -> Json
+
+pub(all) struct RpcRequest {
+  id : RequestId
+  method_name : String
+  params : Json?
+} derive(Eq, @debug.Debug)
+pub fn RpcRequest::method_str(Self) -> String
+pub fn RpcRequest::to_json(Self) -> Json
+
+pub(all) enum RpcResponse {
+  RpcResult(RequestId, Json)
+  RpcErrorResp(RequestId, RpcErrorObject)
+} derive(Eq, @debug.Debug)
+pub fn RpcResponse::to_json(Self) -> Json
+
+pub(all) struct SchemaProperty {
+  typ : SchemaType
+  description : String?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum SchemaType {
+  SchemaObject
+  SchemaString
+  SchemaNumber
+  SchemaInteger
+  SchemaBoolean
+  SchemaArray
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Server {
+  server_info : Implementation
+  mut capabilities : ServerCapabilities
+  mut handlers : Map[String, (Json, ServerContext) -> Result[Json, McpError]]
+  mut initialized : Bool
+}
+pub fn Server::handle_method(Self, String, (Json, ServerContext) -> Result[Json, McpError]) -> Self
+pub fn Server::new(String, String) -> Self
+pub fn Server::process_message(Self, String) -> String?
+pub fn Server::with_tools(Self) -> Self
+
+pub(all) struct ServerCapabilities {
+  mut tools_list_changed : Bool
+  mut resources_subscribe : Bool
+  mut resources_list_changed : Bool
+  mut prompts_list_changed : Bool
+  mut logging : Bool
+} derive(Eq, @debug.Debug)
+pub fn ServerCapabilities::new() -> Self
+pub fn ServerCapabilities::to_json(Self) -> Json
+
+pub(all) struct ServerContext {
+  server_info : Implementation
+  capabilities : ServerCapabilities
+  initialized : Bool
+}
+
+pub(all) struct Tool {
+  name : String
+  mut title : String?
+  mut description : String?
+  input_schema : JsonSchema
+  mut output_schema : JsonSchema?
+  mut annotations : ToolAnnotations?
+} derive(Eq, @debug.Debug)
+pub fn Tool::describe(Self, String) -> Self
+pub fn Tool::new(String, JsonSchema) -> Self
+pub fn Tool::to_json(Self) -> Json
+
+pub(all) struct ToolAnnotations {
+  title : String?
+  read_only_hint : Bool
+  destructive_hint : Bool
+  idempotent_hint : Bool
+  open_world_hint : Bool
+} derive(Eq, @debug.Debug)
+pub fn ToolAnnotations::new() -> Self
+
+// Type aliases
+pub type MessageHandler = (String) -> Unit
+
+pub type MethodHandler = (Json, ServerContext) -> Result[Json, McpError]
+
+pub type ToolCallback = (Json) -> CallToolResult
+
+// Traits
+pub trait Transport {
+  fn send(Self, String) -> Unit
+}
+
