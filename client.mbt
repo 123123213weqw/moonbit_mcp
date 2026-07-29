@@ -8,12 +8,25 @@
 pub(all) struct Client {
   client_info : Implementation
   mut next_id : Int
+  mut initialized : Bool
+  mut server_info : Implementation?
+  mut negotiated_version : String?
+  mut pending : Map[RequestId, RpcResponse]
+  mut notifications : Array[RpcNotification]
 }
 
 ///|
 /// Create a new client advertising the given client name/version.
 pub fn Client::new(name : String, version : String) -> Client {
-  { client_info: { name, title: None, version }, next_id: 1 }
+  {
+    client_info: { name, title: None, version },
+    next_id: 1,
+    initialized: false,
+    server_info: None,
+    negotiated_version: None,
+    pending: Map([]),
+    notifications: [],
+  }
 }
 
 ///|
@@ -76,4 +89,146 @@ pub fn Client::build_tools_call(
   params_obj["name"] = Json::string(name)
   params_obj["arguments"] = arguments
   self.build_request(method_tools_call, Some(Json::object(params_obj)))
+}
+
+// ===================== Response handling =====================
+
+///|
+/// Extract the request id an [RpcResponse] is answering.
+fn response_id(resp : RpcResponse) -> RequestId {
+  match resp {
+    RpcResult(id, _) => id
+    RpcErrorResp(id, _) => id
+  }
+}
+
+///|
+/// Feed an inbound JSON-RPC message string to the client.
+///
+/// Responses are stored (keyed by id) for retrieval with [Client::take_result];
+/// notifications are appended to the received list. Server-initiated requests
+/// (e.g. sampling) are acknowledged but not yet answered.
+pub fn Client::handle_message(
+  self : Client,
+  raw : String,
+) -> Result[Unit, McpError] {
+  match parse_message(raw) {
+    Err(e) => Err(e)
+    Ok(MsgResponse(resp)) => {
+      self.pending[response_id(resp)] = resp
+      Ok(())
+    }
+    Ok(MsgNotification(notif)) => {
+      self.notifications.push(notif)
+      Ok(())
+    }
+    Ok(MsgRequest(_)) => Ok(())
+  }
+}
+
+///|
+/// Retrieve and remove a stored response by id, returning its result JSON.
+///
+/// Fails if no response has arrived for that id yet, or if the server answered
+/// with a JSON-RPC error.
+pub fn Client::take_result(
+  self : Client,
+  id : RequestId,
+) -> Result[Json, McpError] {
+  let resp = match self.pending.get(id) {
+    Some(r) => r
+    None => return Err(ProtocolError("no response received for request id"))
+  }
+  self.pending.remove(id)
+  match resp {
+    RpcResult(_, result) => Ok(result)
+    RpcErrorResp(_, err) => Err(RpcError(err.code, err.message))
+  }
+}
+
+///|
+/// Complete the initialize handshake from a raw initialize response string.
+///
+/// Records the server's [Implementation] and the negotiated protocol version,
+/// then marks the client as initialized.
+pub fn Client::complete_initialize(
+  self : Client,
+  raw : String,
+) -> Result[Implementation, McpError] {
+  let msg = match parse_message(raw) {
+    Ok(m) => m
+    Err(e) => return Err(e)
+  }
+  let result = match msg {
+    MsgResponse(RpcResult(_, result)) => result
+    MsgResponse(RpcErrorResp(_, err)) =>
+      return Err(RpcError(err.code, err.message))
+    _ => return Err(ProtocolError("expected an initialize response"))
+  }
+  let obj = match result {
+    Object(o) => o
+    _ => return Err(ProtocolError("initialize result must be an object"))
+  }
+  let version = match obj.get("protocolVersion") {
+    Some(String(s)) => s
+    _ => return Err(ProtocolError("initialize result missing protocolVersion"))
+  }
+  let server_obj = match obj.get("serverInfo") {
+    Some(Object(si)) => si
+    _ => return Err(ProtocolError("initialize result missing serverInfo"))
+  }
+  let info = match parse_implementation(server_obj) {
+    Ok(i) => i
+    Err(e) => return Err(e)
+  }
+  self.server_info = Some(info)
+  self.negotiated_version = Some(version)
+  self.initialized = true
+  Ok(info)
+}
+
+///|
+/// Parse an [Implementation] from a JSON object (name/title/version).
+fn parse_implementation(
+  obj : Map[String, Json],
+) -> Result[Implementation, McpError] {
+  let name = match obj.get("name") {
+    Some(String(s)) => s
+    _ => return Err(ProtocolError("implementation missing name"))
+  }
+  let title = match obj.get("title") {
+    Some(String(s)) => Some(s)
+    _ => None
+  }
+  let version = match obj.get("version") {
+    Some(String(s)) => s
+    _ => ""
+  }
+  Ok({ name, title, version })
+}
+
+// ===================== State accessors =====================
+
+///|
+/// Whether the client has completed the initialize handshake.
+pub fn Client::is_initialized(self : Client) -> Bool {
+  self.initialized
+}
+
+///|
+/// The server's [Implementation] learned during initialize, if any.
+pub fn Client::server(self : Client) -> Implementation? {
+  self.server_info
+}
+
+///|
+/// The protocol version negotiated during initialize, if any.
+pub fn Client::protocol_version(self : Client) -> String? {
+  self.negotiated_version
+}
+
+///|
+/// All server-initiated notifications received so far, in arrival order.
+pub fn Client::received_notifications(self : Client) -> Array[RpcNotification] {
+  self.notifications
 }

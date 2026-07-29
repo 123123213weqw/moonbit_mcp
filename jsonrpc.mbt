@@ -7,7 +7,7 @@ pub let json_rpc_version : String = "2.0"
 pub(all) enum RequestId {
   IdInt(Int)
   IdString(String)
-} derive(Debug, Eq)
+} derive(Debug, Eq, Hash)
 
 ///|
 /// JSON-RPC error object.
