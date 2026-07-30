@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0]
+
+### Added
+- `MessageBuffer` framing: reassembles a chunked byte stream into complete
+  newline-delimited JSON-RPC messages, with CRLF tolerance, a `feed` helper that
+  forwards framed lines to a `MessageHandler`, and `has_pending` state.
+
 ## [0.2.0]
 
 ### Added

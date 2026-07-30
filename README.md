@@ -75,6 +75,7 @@ fn main {
 | **Client** | Low-level `Client` (request-id allocation, request builders, response correlation, initialize handshake) |
 | **Schema** | JSON Schema builder for tool input/output schemas |
 | **Transport** | `trait Transport` abstraction + `InMemoryTransport` (tests) + `BufferedTransport` |
+| **Framing** | `MessageBuffer` — reassembles a chunked byte stream into newline-delimited JSON-RPC messages (stdio / streamable-HTTP) |
 
 ## Architecture
 
@@ -120,7 +121,7 @@ moon info                 # regenerate public interface snapshot
 
 ## Test Results
 
-- `moon test --target all`: **29/29 passed** on all 4 targets
+- `moon test --target all`: **37/37 passed** on all 4 targets
 - `moon check --deny-warn`: 0 warnings, 0 errors
 
 ## License
