@@ -40,6 +40,31 @@ fn main {
 }
 ```
 
+### Minimal Client
+
+```moonbit
+import {
+  "123123213weqw/moonbit_mcp" @mcp,
+}
+
+///|
+fn main {
+  let client = @mcp.Client::new("my-client", "1.0.0")
+
+  // 1. Open the session: send the initialize request, feed the response back.
+  let (_init_id, init_req) = client.build_initialize()
+  // transport.send(init_req)
+  // ignore(client.complete_initialize(response_line))
+
+  // 2. List tools, correlating the response by request id.
+  let (list_id, list_req) = client.build_tools_list()
+  // transport.send(list_req)
+  // ignore(client.handle_message(response_line))
+  // let tools = client.take_result(list_id)
+  ignore((init_req, list_id))
+}
+```
+
 ## What This Provides
 
 | Layer | Modules |
@@ -47,6 +72,7 @@ fn main {
 | **Protocol** | JSON-RPC 2.0 parsing/encoding, MCP message types (Request/Response/Notification) |
 | **Types** | ContentBlock (text/image/audio/resource), Tool, Resource, Prompt, LogMessage |
 | **Server** | Low-level `Server` (handler registry + dispatch) + high-level `McpServer` builder |
+| **Client** | Low-level `Client` (request-id allocation, request builders, response correlation, initialize handshake) |
 | **Schema** | JSON Schema builder for tool input/output schemas |
 | **Transport** | `trait Transport` abstraction + `InMemoryTransport` (tests) + `BufferedTransport` |
 
@@ -94,7 +120,7 @@ moon info                 # regenerate public interface snapshot
 
 ## Test Results
 
-- `moon test --target all`: **21/21 passed** on all 4 targets
+- `moon test --target all`: **29/29 passed** on all 4 targets
 - `moon check --deny-warn`: 0 warnings, 0 errors
 
 ## License
