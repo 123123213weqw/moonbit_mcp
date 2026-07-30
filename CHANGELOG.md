@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0]
+
+### Added
+- `cmd/mcp-echo`: a runnable stdio MCP server binary. Reads newline-delimited
+  JSON-RPC from stdin (via a native `getchar` FFI loop), serves a single `echo`
+  tool built on `McpServer`, and writes responses to stdout. Run it with
+  `moon run cmd/mcp-echo --target native`.
+
 ## [0.4.0]
 
 ### Added

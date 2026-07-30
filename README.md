@@ -65,6 +65,20 @@ fn main {
 }
 ```
 
+### Run the Echo Server
+
+The repo ships a ready-to-run stdio server in `cmd/mcp-echo`. Build it for the
+native target and talk to it over stdin/stdout:
+
+```bash
+echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"you","version":"0.0.0"}}}
+{"jsonrpc":"2.0","id":2,"method":"tools/list"}
+{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"echo","arguments":{"message":"hi"}}}' \
+  | moon run cmd/mcp-echo --target native
+```
+
+Each input line is a JSON-RPC message; each response is printed on its own line.
+
 ## What This Provides
 
 | Layer | Modules |
