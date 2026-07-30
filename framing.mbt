@@ -44,3 +44,24 @@ pub fn MessageBuffer::push(
   }
   lines
 }
+
+///|
+/// Append a chunk and immediately deliver every complete line to a handler.
+///
+/// Convenient for wiring a raw byte source straight into a server or client:
+/// each framed line is a whole JSON-RPC message ready for [parse_message].
+pub fn MessageBuffer::feed(
+  self : MessageBuffer,
+  chunk : String,
+  handler : MessageHandler,
+) -> Unit {
+  for line in self.push(chunk) {
+    handler(line)
+  }
+}
+
+///|
+/// Whether a partial (not yet newline-terminated) message is buffered.
+pub fn MessageBuffer::has_pending(self : MessageBuffer) -> Bool {
+  self.pending.length() > 0
+}
