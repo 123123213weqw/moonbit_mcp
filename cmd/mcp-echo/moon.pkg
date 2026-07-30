@@ -1,0 +1,5 @@
+import {
+  "123123213weqw/moonbit_mcp" @mcp,
+}
+
+pkgtype(kind: "executable")
