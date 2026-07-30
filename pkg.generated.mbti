@@ -101,6 +101,30 @@ pub fn CallToolResult::error(String) -> Self
 pub fn CallToolResult::text(String) -> Self
 pub fn CallToolResult::to_json(Self) -> Json
 
+pub(all) struct Client {
+  client_info : Implementation
+  mut next_id : Int
+  mut initialized : Bool
+  mut server_info : Implementation?
+  mut negotiated_version : String?
+  mut pending : Map[RequestId, RpcResponse]
+  mut notifications : Array[RpcNotification]
+}
+pub fn Client::build_initialize(Self) -> (RequestId, String)
+pub fn Client::build_ping(Self) -> (RequestId, String)
+pub fn Client::build_request(Self, String, Json?) -> (RequestId, String)
+pub fn Client::build_tools_call(Self, String, Json) -> (RequestId, String)
+pub fn Client::build_tools_list(Self) -> (RequestId, String)
+pub fn Client::complete_initialize(Self, String) -> Result[Implementation, McpError]
+pub fn Client::handle_message(Self, String) -> Result[Unit, McpError]
+pub fn Client::info(Self) -> Implementation
+pub fn Client::is_initialized(Self) -> Bool
+pub fn Client::new(String, String) -> Self
+pub fn Client::protocol_version(Self) -> String?
+pub fn Client::received_notifications(Self) -> Array[RpcNotification]
+pub fn Client::server(Self) -> Implementation?
+pub fn Client::take_result(Self, RequestId) -> Result[Json, McpError]
+
 pub(all) struct ContentAnnotations {
   audience : Array[Audience]
   priority : Double?
@@ -239,7 +263,7 @@ pub fn ReadResourceResult::to_json(Self) -> Json
 pub(all) enum RequestId {
   IdInt(Int)
   IdString(String)
-} derive(Eq, @debug.Debug)
+} derive(Eq, Hash, @debug.Debug)
 
 pub(all) struct Resource {
   uri : String
