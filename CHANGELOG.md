@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0]
+
+### Added
+- `ServerConnection[T : Transport]`: drives a `Server` (or a `McpServer` via
+  `inner()`) from arbitrary inbound chunks — framing them with a `MessageBuffer`,
+  dispatching each complete message, and routing responses back through the
+  transport. Adds `receive`, `receive_line`, and `has_pending`.
+
 ## [0.3.0]
 
 ### Added

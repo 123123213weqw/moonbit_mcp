@@ -76,6 +76,7 @@ fn main {
 | **Schema** | JSON Schema builder for tool input/output schemas |
 | **Transport** | `trait Transport` abstraction + `InMemoryTransport` (tests) + `BufferedTransport` |
 | **Framing** | `MessageBuffer` — reassembles a chunked byte stream into newline-delimited JSON-RPC messages (stdio / streamable-HTTP) |
+| **Connection** | `ServerConnection` — drives a `Server` from any byte stream: frames inbound chunks, dispatches them, routes responses through a `Transport` |
 
 ## Architecture
 
@@ -121,7 +122,7 @@ moon info                 # regenerate public interface snapshot
 
 ## Test Results
 
-- `moon test --target all`: **37/37 passed** on all 4 targets
+- `moon test --target all`: **43/43 passed** on all 4 targets
 - `moon check --deny-warn`: 0 warnings, 0 errors
 
 ## License
