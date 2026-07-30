@@ -365,6 +365,16 @@ pub(all) struct ServerCapabilities {
 pub fn ServerCapabilities::new() -> Self
 pub fn ServerCapabilities::to_json(Self) -> Json
 
+pub(all) struct ServerConnection[T] {
+  server : Server
+  transport : T
+  buffer : MessageBuffer
+}
+pub fn[T] ServerConnection::has_pending(Self[T]) -> Bool
+pub fn[T] ServerConnection::new(Server, T) -> Self[T]
+pub fn[T : Transport] ServerConnection::receive(Self[T], String) -> Unit
+pub fn[T : Transport] ServerConnection::receive_line(Self[T], String) -> Unit
+
 pub(all) struct ServerContext {
   server_info : Implementation
   capabilities : ServerCapabilities
