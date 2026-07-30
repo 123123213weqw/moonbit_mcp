@@ -221,6 +221,14 @@ pub fn McpServer::process_message(Self, String) -> String?
 pub fn McpServer::tool(Self, String, JsonSchema, (Json) -> CallToolResult) -> Self
 pub fn McpServer::tool_desc(Self, String, String, JsonSchema, (Json) -> CallToolResult) -> Self
 
+pub(all) struct MessageBuffer {
+  mut pending : String
+}
+pub fn MessageBuffer::feed(Self, String, (String) -> Unit) -> Unit
+pub fn MessageBuffer::has_pending(Self) -> Bool
+pub fn MessageBuffer::new() -> Self
+pub fn MessageBuffer::push(Self, String) -> Array[String]
+
 pub(all) struct Paginated[T] {
   items : Array[T]
   next_cursor : String?
