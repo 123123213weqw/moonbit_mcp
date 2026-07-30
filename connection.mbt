@@ -39,3 +39,22 @@ pub fn[T : Transport] ServerConnection::receive(
     }
   })
 }
+
+///|
+/// Dispatch a single, already-complete message line (no framing needed) and
+/// send any response through the transport.
+pub fn[T : Transport] ServerConnection::receive_line(
+  self : ServerConnection[T],
+  line : String,
+) -> Unit {
+  match self.server.process_message(line) {
+    Some(resp) => send_message(self.transport, resp)
+    None => ()
+  }
+}
+
+///|
+/// Whether a partial inbound message is still buffered awaiting more bytes.
+pub fn[T] ServerConnection::has_pending(self : ServerConnection[T]) -> Bool {
+  self.buffer.has_pending()
+}
