@@ -1,0 +1,6 @@
+import {
+  "123123213weqw/moonbit_mcp" @mcp,
+  "moonbitlang/core/json",
+}
+
+pkgtype(kind: "executable")
