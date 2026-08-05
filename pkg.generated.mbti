@@ -434,4 +434,3 @@ pub type ToolCallback = (Json) -> CallToolResult
 pub trait Transport {
   fn send(Self, String) -> Unit
 }
-
