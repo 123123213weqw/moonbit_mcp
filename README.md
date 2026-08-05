@@ -50,18 +50,21 @@ import {
 ///|
 fn main {
   let client = @mcp.Client::new("my-client", "1.0.0")
+  // Pass any @mcp.Transport that reaches your server (stdio / HTTP / in-memory).
+  let (transport, _peer) = @mcp.InMemoryTransport::pair()
+  let conn = @mcp.ClientConnection::new(client, transport)
 
-  // 1. Open the session: send the initialize request, feed the response back.
-  let (_init_id, init_req) = client.build_initialize()
-  // transport.send(init_req)
-  // ignore(client.complete_initialize(response_line))
+  // 1. Open the session: send initialize, feed the response bytes back in.
+  let init_id = conn.send_initialize()
+  // conn.receive(server_bytes)            // feed inbound server bytes
+  // let info = conn.take_initialize(init_id)
+  // conn.send_initialized()
 
   // 2. List tools, correlating the response by request id.
-  let (list_id, list_req) = client.build_tools_list()
-  // transport.send(list_req)
-  // ignore(client.handle_message(response_line))
+  let list_id = conn.send_tools_list()
+  // conn.receive(server_bytes)
   // let tools = client.take_result(list_id)
-  ignore((init_req, list_id))
+  ignore((init_id, list_id))
 }
 ```
 
@@ -79,6 +82,16 @@ echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":
 
 Each input line is a JSON-RPC message; each response is printed on its own line.
 
+### Run the Loopback Demo
+
+`cmd/mcp-loopback` runs a full MCP session in one process: a `ClientConnection`
+and a `ServerConnection` wired back-to-back through linked in-memory
+transports — initialize handshake, `tools/list`, and an `echo` tool call:
+
+```bash
+moon run cmd/mcp-loopback --target native
+```
+
 ## What This Provides
 
 | Layer | Modules |
@@ -91,6 +104,7 @@ Each input line is a JSON-RPC message; each response is printed on its own line.
 | **Transport** | `trait Transport` abstraction + `InMemoryTransport` (tests) + `BufferedTransport` |
 | **Framing** | `MessageBuffer` — reassembles a chunked byte stream into newline-delimited JSON-RPC messages (stdio / streamable-HTTP) |
 | **Connection** | `ServerConnection` — drives a `Server` from any byte stream: frames inbound chunks, dispatches them, routes responses through a `Transport` |
+| | `ClientConnection` — drives a `Client` over any byte stream: builds-and-sends requests through a `Transport`, frames inbound chunks, correlates responses |
 
 ## Architecture
 
@@ -136,7 +150,7 @@ moon info                 # regenerate public interface snapshot
 
 ## Test Results
 
-- `moon test --target all`: **43/43 passed** on all 4 targets
+- `moon test --target all`: **52/52 passed** on all 4 targets
 - `moon check --deny-warn`: 0 warnings, 0 errors
 
 ## License

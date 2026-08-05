@@ -91,6 +91,7 @@ pub(all) struct BufferedTransport {
 pub fn BufferedTransport::close(Self) -> Unit
 pub fn BufferedTransport::messages(Self) -> Array[String]
 pub fn BufferedTransport::new() -> Self
+pub impl Transport for BufferedTransport
 
 pub(all) struct CallToolResult {
   content : Array[ContentBlock]
@@ -116,6 +117,7 @@ pub fn Client::build_request(Self, String, Json?) -> (RequestId, String)
 pub fn Client::build_tools_call(Self, String, Json) -> (RequestId, String)
 pub fn Client::build_tools_list(Self) -> (RequestId, String)
 pub fn Client::complete_initialize(Self, String) -> Result[Implementation, McpError]
+pub fn Client::complete_initialize_result(Self, Json) -> Result[Implementation, McpError]
 pub fn Client::handle_message(Self, String) -> Result[Unit, McpError]
 pub fn Client::info(Self) -> Implementation
 pub fn Client::is_initialized(Self) -> Bool
@@ -124,6 +126,24 @@ pub fn Client::protocol_version(Self) -> String?
 pub fn Client::received_notifications(Self) -> Array[RpcNotification]
 pub fn Client::server(Self) -> Implementation?
 pub fn Client::take_result(Self, RequestId) -> Result[Json, McpError]
+
+pub(all) struct ClientConnection[T] {
+  client : Client
+  transport : T
+  buffer : MessageBuffer
+}
+pub fn[T] ClientConnection::has_pending(Self[T]) -> Bool
+pub fn[T] ClientConnection::new(Client, T) -> Self[T]
+pub fn[T] ClientConnection::receive(Self[T], String) -> Unit
+pub fn[T] ClientConnection::receive_line(Self[T], String) -> Result[Unit, McpError]
+pub fn[T : Transport] ClientConnection::send_initialize(Self[T]) -> RequestId
+pub fn[T : Transport] ClientConnection::send_initialized(Self[T]) -> Unit
+pub fn[T : Transport] ClientConnection::send_ping(Self[T]) -> RequestId
+pub fn[T : Transport] ClientConnection::send_raw(Self[T], String) -> Unit
+pub fn[T : Transport] ClientConnection::send_request(Self[T], String, Json?) -> RequestId
+pub fn[T : Transport] ClientConnection::send_tools_call(Self[T], String, Json) -> RequestId
+pub fn[T : Transport] ClientConnection::send_tools_list(Self[T]) -> RequestId
+pub fn[T] ClientConnection::take_initialize(Self[T], RequestId) -> Result[Implementation, McpError]
 
 pub(all) struct ContentAnnotations {
   audience : Array[Audience]
@@ -162,6 +182,7 @@ pub(all) struct InMemoryTransport {
 pub fn InMemoryTransport::close(Self) -> Unit
 pub fn InMemoryTransport::on_message(Self, (String) -> Unit) -> Unit
 pub fn InMemoryTransport::pair() -> (Self, Self)
+pub impl Transport for InMemoryTransport
 
 pub(all) struct JsonSchema {
   mut typ : SchemaType
