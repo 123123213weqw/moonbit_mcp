@@ -50,7 +50,7 @@ pub fn InMemoryTransport::close(self : InMemoryTransport) -> Unit {
 }
 
 ///|
-impl Transport for InMemoryTransport with fn send(self, msg : String) -> Unit {
+pub impl Transport for InMemoryTransport with fn send(self, msg : String) -> Unit {
   if self.closed {
     return
   }
@@ -88,7 +88,7 @@ pub fn BufferedTransport::close(self : BufferedTransport) -> Unit {
 }
 
 ///|
-impl Transport for BufferedTransport with fn send(self, msg : String) -> Unit {
+pub impl Transport for BufferedTransport with fn send(self, msg : String) -> Unit {
   if !self.closed {
     self.sent.push(msg)
   }

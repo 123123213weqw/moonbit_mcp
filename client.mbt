@@ -165,6 +165,20 @@ pub fn Client::complete_initialize(
       return Err(RpcError(err.code, err.message))
     _ => return Err(ProtocolError("expected an initialize response"))
   }
+  self.complete_initialize_result(result)
+}
+
+///|
+/// Complete the initialize handshake from an already-extracted `result` JSON
+/// value (e.g. the initialize response after it was correlated by id through a
+/// [ClientConnection]).
+///
+/// Records the server's [Implementation] and the negotiated protocol version,
+/// then marks the client as initialized.
+pub fn Client::complete_initialize_result(
+  self : Client,
+  result : Json,
+) -> Result[Implementation, McpError] {
   let obj = match result {
     Object(o) => o
     _ => return Err(ProtocolError("initialize result must be an object"))
