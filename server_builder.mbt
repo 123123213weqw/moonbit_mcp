@@ -3,20 +3,67 @@
 pub type ToolCallback = (Json) -> CallToolResult
 
 ///|
+/// Resource reader callback: receives the requested URI and returns its contents.
+pub type ResourceCallback = (String) -> ReadResourceResult
+
+///|
+/// Prompt renderer callback: receives the supplied arguments object.
+pub type PromptCallback = (Json) -> GetPromptResult
+
+///|
 /// High-level MCP server builder with ergonomic tool/resource/prompt registration.
 pub(all) struct McpServer {
   server : Server
   mut tools : Array[Tool]
   mut tool_callbacks : Map[String, ToolCallback]
+  mut resources : Array[Resource]
+  mut resource_callbacks : Map[String, ResourceCallback]
+  mut prompts : Array[Prompt]
+  mut prompt_callbacks : Map[String, PromptCallback]
 }
 
 ///|
 /// Create a new high-level server builder.
 pub fn McpServer::new(name : String, version : String) -> McpServer {
-  let server = Server::new(name, version).with_tools()
-  let s : McpServer = { server, tools: [], tool_callbacks: Map([]) }
+  let server = Server::new(name, version)
+    .with_tools()
+    .with_resources()
+    .with_prompts()
+  let s : McpServer = {
+    server,
+    tools: [],
+    tool_callbacks: Map([]),
+    resources: [],
+    resource_callbacks: Map([]),
+    prompts: [],
+    prompt_callbacks: Map([]),
+  }
   s.register_builtin_handlers()
   s
+}
+
+///|
+/// Register a concrete resource and its reader callback.
+pub fn McpServer::resource(
+  self : McpServer,
+  resource : Resource,
+  cb : ResourceCallback,
+) -> McpServer {
+  self.resources.push(resource)
+  self.resource_callbacks[resource.uri] = cb
+  self
+}
+
+///|
+/// Register a reusable prompt and its rendering callback.
+pub fn McpServer::prompt(
+  self : McpServer,
+  prompt : Prompt,
+  cb : PromptCallback,
+) -> McpServer {
+  self.prompts.push(prompt)
+  self.prompt_callbacks[prompt.name] = cb
+  self
 }
 
 ///|
@@ -87,6 +134,86 @@ fn McpServer::register_builtin_handlers(self : McpServer) -> Unit {
           Ok(result.to_json())
         }
         None => Err(UnknownTarget("tool: " + tool_name))
+      }
+    }),
+  )
+  // resources/list handler
+  let resources_ref = self.resources
+  ignore(
+    self.server.handle_method(method_resources_list, fn(
+      _params : Json,
+      _ctx : ServerContext,
+    ) -> Result[Json, McpError] {
+      let result_obj : Map[String, Json] = Map([])
+      result_obj["resources"] = Json::array(
+        resources_ref.map(fn(r) { r.to_json() }),
+      )
+      Ok(Json::object(result_obj))
+    }),
+  )
+  // resources/read handler
+  let resource_callbacks = self.resource_callbacks
+  ignore(
+    self.server.handle_method(method_resources_read, fn(
+      params : Json,
+      _ctx : ServerContext,
+    ) -> Result[Json, McpError] {
+      let obj = match params {
+        Object(o) => o
+        _ =>
+          return Err(
+            InvalidArguments("resources/read params must be an object"),
+          )
+      }
+      let uri = match obj.get("uri") {
+        Some(String(s)) => s
+        _ =>
+          return Err(InvalidArguments("resources/read requires a 'uri' string"))
+      }
+      match resource_callbacks.get(uri) {
+        Some(cb) => Ok(cb(uri).to_json())
+        None => Err(UnknownTarget("resource: " + uri))
+      }
+    }),
+  )
+  // prompts/list handler
+  let prompts_ref = self.prompts
+  ignore(
+    self.server.handle_method(method_prompts_list, fn(
+      _params : Json,
+      _ctx : ServerContext,
+    ) -> Result[Json, McpError] {
+      let result_obj : Map[String, Json] = Map([])
+      result_obj["prompts"] = Json::array(
+        prompts_ref.map(fn(p) { p.to_json() }),
+      )
+      Ok(Json::object(result_obj))
+    }),
+  )
+  // prompts/get handler
+  let prompt_callbacks = self.prompt_callbacks
+  ignore(
+    self.server.handle_method(method_prompts_get, fn(
+      params : Json,
+      _ctx : ServerContext,
+    ) -> Result[Json, McpError] {
+      let obj = match params {
+        Object(o) => o
+        _ =>
+          return Err(InvalidArguments("prompts/get params must be an object"))
+      }
+      let name = match obj.get("name") {
+        Some(String(s)) => s
+        _ =>
+          return Err(InvalidArguments("prompts/get requires a 'name' string"))
+      }
+      let arguments = match obj.get("arguments") {
+        Some(a) => a
+        None => Json::empty_object()
+      }
+      match prompt_callbacks.get(name) {
+        Some(cb) => Ok(cb(arguments).to_json())
+        None => Err(UnknownTarget("prompt: " + name))
       }
     }),
   )

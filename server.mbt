@@ -53,6 +53,20 @@ pub fn Server::with_tools(self : Server) -> Server {
 }
 
 ///|
+/// Enable resources discovery, reads, and list-changed notifications.
+pub fn Server::with_resources(self : Server) -> Server {
+  self.capabilities.resources_list_changed = true
+  self
+}
+
+///|
+/// Enable prompt discovery, retrieval, and list-changed notifications.
+pub fn Server::with_prompts(self : Server) -> Server {
+  self.capabilities.prompts_list_changed = true
+  self
+}
+
+///|
 /// Process a single incoming JSON-RPC message string and return the response
 /// string (if any — notifications produce no response).
 pub fn Server::process_message(self : Server, raw : String) -> String? {
