@@ -91,6 +91,103 @@ pub fn Client::build_tools_call(
   self.build_request(method_tools_call, Some(Json::object(params_obj)))
 }
 
+///|
+/// Build a `resources/list` request, optionally continuing from a cursor.
+pub fn Client::build_resources_list(
+  self : Client,
+  cursor : String?,
+) -> (RequestId, String) {
+  let params = match cursor {
+    Some(c) => {
+      let obj : Map[String, Json] = Map([])
+      obj["cursor"] = Json::string(c)
+      Some(Json::object(obj))
+    }
+    None => None
+  }
+  self.build_request(method_resources_list, params)
+}
+
+///|
+/// Build a `resources/read` request for a concrete URI.
+pub fn Client::build_resources_read(
+  self : Client,
+  uri : String,
+) -> (RequestId, String) {
+  let params : Map[String, Json] = Map([])
+  params["uri"] = Json::string(uri)
+  self.build_request(method_resources_read, Some(Json::object(params)))
+}
+
+///|
+/// Build a `resources/subscribe` request for change notifications on a URI.
+pub fn Client::build_resources_subscribe(
+  self : Client,
+  uri : String,
+) -> (RequestId, String) {
+  let params : Map[String, Json] = Map([])
+  params["uri"] = Json::string(uri)
+  self.build_request(method_resources_subscribe, Some(Json::object(params)))
+}
+
+///|
+/// Build a `prompts/list` request, optionally continuing from a cursor.
+pub fn Client::build_prompts_list(
+  self : Client,
+  cursor : String?,
+) -> (RequestId, String) {
+  let params = match cursor {
+    Some(c) => {
+      let obj : Map[String, Json] = Map([])
+      obj["cursor"] = Json::string(c)
+      Some(Json::object(obj))
+    }
+    None => None
+  }
+  self.build_request(method_prompts_list, params)
+}
+
+///|
+/// Build a `prompts/get` request with a JSON object of string arguments.
+pub fn Client::build_prompts_get(
+  self : Client,
+  name : String,
+  arguments : Json,
+) -> (RequestId, String) {
+  let params : Map[String, Json] = Map([])
+  params["name"] = Json::string(name)
+  params["arguments"] = arguments
+  self.build_request(method_prompts_get, Some(Json::object(params)))
+}
+
+///|
+/// Build a `logging/setLevel` request.
+pub fn Client::build_logging_set_level(
+  self : Client,
+  level : LogLevel,
+) -> (RequestId, String) {
+  let params : Map[String, Json] = Map([])
+  params["level"] = Json::string(level.to_string())
+  self.build_request(method_logging_set_level, Some(Json::object(params)))
+}
+
+///|
+/// Encode a client notification without allocating a request id.
+pub fn Client::build_notification(
+  self : Client,
+  method_name : String,
+  params : Json?,
+) -> String {
+  ignore(self)
+  message_to_string(MsgNotification({ method_name, params }))
+}
+
+///|
+/// Build the `notifications/initialized` notification.
+pub fn Client::build_initialized(self : Client) -> String {
+  self.build_notification(method_initialized, None)
+}
+
 // ===================== Response handling =====================
 
 ///|

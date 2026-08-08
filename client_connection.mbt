@@ -92,12 +92,74 @@ pub fn[T : Transport] ClientConnection::send_initialize(
 pub fn[T : Transport] ClientConnection::send_initialized(
   self : ClientConnection[T],
 ) -> Unit {
-  send_message(
-    self.transport,
-    message_to_string(
-      MsgNotification({ method_name: method_initialized, params: None }),
-    ),
-  )
+  send_message(self.transport, self.client.build_initialized())
+}
+
+///|
+/// Build and send a `resources/list` request.
+pub fn[T : Transport] ClientConnection::send_resources_list(
+  self : ClientConnection[T],
+  cursor : String?,
+) -> RequestId {
+  let (id, req) = self.client.build_resources_list(cursor)
+  send_message(self.transport, req)
+  id
+}
+
+///|
+/// Build and send a `resources/read` request.
+pub fn[T : Transport] ClientConnection::send_resources_read(
+  self : ClientConnection[T],
+  uri : String,
+) -> RequestId {
+  let (id, req) = self.client.build_resources_read(uri)
+  send_message(self.transport, req)
+  id
+}
+
+///|
+/// Build and send a `resources/subscribe` request.
+pub fn[T : Transport] ClientConnection::send_resources_subscribe(
+  self : ClientConnection[T],
+  uri : String,
+) -> RequestId {
+  let (id, req) = self.client.build_resources_subscribe(uri)
+  send_message(self.transport, req)
+  id
+}
+
+///|
+/// Build and send a `prompts/list` request.
+pub fn[T : Transport] ClientConnection::send_prompts_list(
+  self : ClientConnection[T],
+  cursor : String?,
+) -> RequestId {
+  let (id, req) = self.client.build_prompts_list(cursor)
+  send_message(self.transport, req)
+  id
+}
+
+///|
+/// Build and send a `prompts/get` request.
+pub fn[T : Transport] ClientConnection::send_prompts_get(
+  self : ClientConnection[T],
+  name : String,
+  arguments : Json,
+) -> RequestId {
+  let (id, req) = self.client.build_prompts_get(name, arguments)
+  send_message(self.transport, req)
+  id
+}
+
+///|
+/// Build and send a `logging/setLevel` request.
+pub fn[T : Transport] ClientConnection::send_logging_set_level(
+  self : ClientConnection[T],
+  level : LogLevel,
+) -> RequestId {
+  let (id, req) = self.client.build_logging_set_level(level)
+  send_message(self.transport, req)
+  id
 }
 
 ///|
