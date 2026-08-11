@@ -141,27 +141,6 @@ fn parse_id(j : Json) -> Result[RequestId, McpError] {
 }
 
 ///|
-/// Helper: safe map access returning Json (Null if key absent).
-fn json_get(obj : Map[String, Json], key : String) -> Json {
-  match obj.get(key) {
-    Some(v) => v
-    None => Json::null()
-  }
-}
-
-///|
-/// Helper: extract a string field from a JSON object.
-fn get_string_field(
-  obj : Map[String, Json],
-  key : String,
-) -> Result[String, McpError] {
-  match json_get(obj, key) {
-    String(s) => Ok(s)
-    _ => Err(ParseError(key + " must be a string"))
-  }
-}
-
-///|
 /// Parse an [RpcMessage] from a raw JSON string.
 pub fn parse_message(raw : String) -> Result[RpcMessage, McpError] {
   let parsed = @json.parse(raw) catch {
@@ -169,52 +148,69 @@ pub fn parse_message(raw : String) -> Result[RpcMessage, McpError] {
   }
   match parsed {
     Object(obj) => {
-      // method present => request or notification
-      let method_val = json_get(obj, "method")
-      match method_val {
-        String(_) => {
-          let m_name = match get_string_field(obj, "method") {
-            Ok(m) => m
-            Err(e) => return Err(e)
+      // Every JSON-RPC message carries the literal protocol version.
+      match obj.get("jsonrpc") {
+        Some(String(v)) if v == json_rpc_version => ()
+        Some(String(_)) => return Err(ParseError("jsonrpc must be '2.0'"))
+        _ => return Err(ParseError("jsonrpc must be a string"))
+      }
+      // A present method distinguishes requests/notifications from responses.
+      match obj.get("method") {
+        Some(String(m_name)) => {
+          let params : Json? = match obj.get("params") {
+            None => None
+            Some(Object(p)) => Some(Json::object(p))
+            Some(Array(p)) => Some(Json::array(p))
+            Some(_) =>
+              return Err(ParseError("params must be an object or array"))
           }
-          let params : Json? = match json_get(obj, "params") {
-            Null => None
-            p => Some(p)
-          }
-          let id_val = json_get(obj, "id")
-          match id_val {
-            Null => Ok(MsgNotification({ method_name: m_name, params }))
-            _ =>
+          match obj.get("id") {
+            None => Ok(MsgNotification({ method_name: m_name, params }))
+            Some(id_val) =>
               match parse_id(id_val) {
                 Ok(id) => Ok(MsgRequest({ id, method_name: m_name, params }))
                 Err(e) => Err(e)
               }
           }
         }
-        _ => {
-          // no method => response
-          let id = match parse_id(json_get(obj, "id")) {
-            Ok(i) => i
-            Err(e) => return Err(e)
+        Some(_) => Err(ParseError("method must be a string"))
+        None => {
+          // A response must have an id and exactly one of result/error.
+          let id = match obj.get("id") {
+            Some(id_val) =>
+              match parse_id(id_val) {
+                Ok(i) => i
+                Err(e) => return Err(e)
+              }
+            None => return Err(ParseError("response must contain id"))
           }
-          // result present and not solely a Null-as-absent => RpcResult
-          let result_val = json_get(obj, "result")
-          let error_val = json_get(obj, "error")
-          match error_val {
-            Object(err_obj) => {
-              let code = match json_get(err_obj, "code") {
-                Number(n, ..) => n.to_int()
+          let result = obj.get("result")
+          let error = obj.get("error")
+          match (result, error) {
+            (Some(_), Some(_)) =>
+              Err(ParseError("response cannot contain both result and error"))
+            (None, None) =>
+              Err(ParseError("response must contain result or error"))
+            (Some(result), None) => Ok(MsgResponse(RpcResult(id, result)))
+            (None, Some(Object(err_obj))) => {
+              let code = match err_obj.get("code") {
+                Some(Number(n, ..)) => {
+                  let i = n.to_int()
+                  if n != i.to_double() {
+                    return Err(ParseError("error.code must be an integer"))
+                  }
+                  i
+                }
                 _ => return Err(ParseError("error.code must be number"))
               }
-              let message = match json_get(err_obj, "message") {
-                String(s) => s
+              let message = match err_obj.get("message") {
+                Some(String(s)) => s
                 _ => return Err(ParseError("error.message must be string"))
               }
-              Ok(MsgResponse(RpcErrorResp(id, { code, message, data: None })))
+              let data = err_obj.get("data")
+              Ok(MsgResponse(RpcErrorResp(id, { code, message, data })))
             }
-            _ =>
-              // treat as result (result may be Null for empty results)
-              Ok(MsgResponse(RpcResult(id, result_val)))
+            (None, Some(_)) => Err(ParseError("error must be an object"))
           }
         }
       }
