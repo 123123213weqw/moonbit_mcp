@@ -123,11 +123,16 @@ fn McpServer::register_builtin_handlers(self : McpServer) -> Unit {
         Object(o) => o
         _ => return Err(InvalidArguments("tools/call params must be an object"))
       }
-      let tool_name = match obj["name"] {
-        String(s) => s
+      let tool_name = match obj.get("name") {
+        Some(String(s)) => s
         _ => return Err(InvalidArguments("tools/call requires a 'name' string"))
       }
-      let arguments = obj["arguments"]
+      let arguments = match obj.get("arguments") {
+        Some(Object(args)) => Json::object(args)
+        None => Json::empty_object()
+        Some(_) =>
+          return Err(InvalidArguments("tools/call arguments must be an object"))
+      }
       match callbacks.get(tool_name) {
         Some(cb) => {
           let result = cb(arguments)

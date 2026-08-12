@@ -10,8 +10,8 @@ fn build_server() -> @mcp.Server {
       fn(args) {
         let msg = match args {
           Object(o) =>
-            match o["message"] {
-              String(s) => s
+            match o.get("message") {
+              Some(String(s)) => s
               _ => args.stringify()
             }
           _ => args.stringify()
