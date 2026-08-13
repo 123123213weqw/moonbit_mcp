@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "referenceProject": "123123213weqw/moon_proto",
+  "purpose": "Minimum evidence floor for the engineering maturity uplift",
+  "thresholds": {
+    "commits": 95,
+    "trackedFiles": 65,
+    "moonbitNonblankLines": 4000,
+    "pythonNonblankLines": 300,
+    "documentationFiles": 10,
+    "documentationNonblankLines": 1500,
+    "moonbitTests": 100,
+    "conformanceCases": 15
+  }
+}

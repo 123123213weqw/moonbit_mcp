@@ -1,27 +1,45 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
-echo "==> moon version"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
+
+step() { printf '\n==> %s\n' "$*"; }
+
+step "tool versions"
 moon version
+python3 --version
+git --version
 
-echo "==> moon fmt --check"
-moon fmt --check || { echo "Format check failed. Run 'moon fmt' to fix."; exit 1; }
+step "format check"
+moon fmt --check
 
-echo "==> moon info (interface snapshot)"
+step "public interface snapshots"
 moon info
-git diff --exit-code -- pkg.generated.mbti || { echo "pkg.generated.mbti is out of date. Run 'moon info' and commit."; exit 1; }
+git diff --exit-code -- '*.mbti'
 
-echo "==> moon check --deny-warn"
+step "warnings-as-errors check"
 moon check --deny-warn
 
-echo "==> moon build"
+step "build"
 moon build
 
-echo "==> moon test --deny-warn"
+step "unit and integration tests"
 moon test --deny-warn
 
-echo "==> moon test --target all"
+step "all MoonBit targets"
 moon test --target all
 
-echo ""
-echo "✅ All release gate checks passed."
+step "Python syntax"
+python3 -m compileall -q scripts
+
+step "conformance fixture schema"
+python3 scripts/mcp_conformance.py validate
+
+step "black-box echo conformance"
+python3 scripts/mcp_conformance.py run --timeout 10 -- moon run cmd/mcp-echo --target native
+
+step "engineering evidence floor"
+python3 scripts/project_audit.py --check
+
+printf '\nAll release gate checks passed.\n'
