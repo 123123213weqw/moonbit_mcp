@@ -1,0 +1,48 @@
+name: Feature request
+description: Propose a compatible capability or API
+title: "proposal: "
+labels: ["enhancement", "needs-design"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and users
+      description: Describe the use case without prescribing an implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: protocol
+    attributes:
+      label: Protocol basis
+      description: Identify MCP revision, operation, and normative behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: design
+    attributes:
+      label: Proposed API and layer
+      description: Explain model, client, server, transport, or host ownership.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives and compatibility
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification plan
+      description: Unit, failure, end-to-end, target, and black-box cases.
+    validations:
+      required: true
+  - type: checkboxes
+    id: boundaries
+    attributes:
+      label: Boundary review
+      options:
+        - label: I considered security and resource limits.
+          required: true
+        - label: I distinguished SDK behavior from host/adapter policy.
+          required: true

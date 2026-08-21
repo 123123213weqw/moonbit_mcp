@@ -1,0 +1,49 @@
+name: Bug report
+description: Report reproducible incorrect SDK behavior
+title: "bug: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: "For vulnerabilities use SECURITY.md and private reporting."
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: "v0.7.0 or commit SHA"
+    validations:
+      required: true
+  - type: dropdown
+    id: target
+    attributes:
+      label: MoonBit target
+      options: [wasm-gc, wasm, js, native, multiple]
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Include exact JSON, MoonBit code, or commands.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior and output
+    validations:
+      required: true
+  - type: textarea
+    id: versions
+    attributes:
+      label: Tool versions
+      description: Paste moon version --all and operating system details.
+    validations:
+      required: true

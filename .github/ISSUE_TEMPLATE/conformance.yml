@@ -1,0 +1,38 @@
+name: Interoperability report
+description: Report behavior observed against another MCP implementation
+title: "conformance: "
+labels: ["conformance", "needs-triage"]
+body:
+  - type: input
+    id: peer
+    attributes:
+      label: Peer implementation and version
+    validations:
+      required: true
+  - type: input
+    id: revision
+    attributes:
+      label: MCP protocol revision
+      placeholder: "2025-06-18"
+    validations:
+      required: true
+  - type: textarea
+    id: transcript
+    attributes:
+      label: Minimal redacted transcript
+      description: One JSON message per line; remove secrets and private content.
+      render: json
+    validations:
+      required: true
+  - type: textarea
+    id: difference
+    attributes:
+      label: Observed difference
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Reproduction command and environment
+    validations:
+      required: true
