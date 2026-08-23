@@ -4,31 +4,64 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  moonbit:
+  release-gate:
+    name: Release gate
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
+      - name: Checkout complete history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Install MoonBit toolchain
+        shell: bash
         run: |
           curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
           echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
-      - name: Show MoonBit version
-        run: moon version
+
       - name: Update MoonBit registry index
         run: moon update
-      - name: Format check
-        run: moon fmt --check
-      - name: Public interface check
+
+      - name: Reject whitespace errors
+        run: git diff --check HEAD^
+
+      - name: Run release gate
+        run: ./scripts/release_gate.sh
+
+      - name: Generate engineering evidence
+        if: always()
         run: |
-          moon info
-          git diff --exit-code -- pkg.generated.mbti
-      - name: Check
-        run: moon check --deny-warn
-      - name: Build
-        run: moon build
-      - name: Test
-        run: moon test --deny-warn
-      - name: Test all targets
-        run: moon test --target all
+          mkdir -p build/evidence
+          python3 scripts/project_audit.py \
+            --format markdown \
+            --output build/evidence/engineering.md
+          python3 scripts/project_audit.py \
+            --format json \
+            --files \
+            --output build/evidence/engineering.json
+
+      - name: Generate black-box conformance report
+        if: always()
+        run: |
+          python3 scripts/mcp_conformance.py run \
+            --timeout 10 \
+            --report build/evidence/conformance.json \
+            -- moon run cmd/mcp-echo --target native
+
+      - name: Upload verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: moonbit-mcp-verification-${{ github.sha }}
+          path: build/evidence/
+          if-no-files-found: error
+          retention-days: 30
