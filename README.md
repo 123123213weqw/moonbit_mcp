@@ -1,12 +1,19 @@
 # MoonBit MCP SDK
 
 [![CI](https://github.com/123123213weqw/moonbit_mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/123123213weqw/moonbit_mcp/actions/workflows/ci.yml)
-![MoonBit](https://img.shields.io/badge/MoonBit-0.1.20260713-blue)
+![Package](https://img.shields.io/badge/package-v0.7.0-blue)
+![Protocol](https://img.shields.io/badge/MCP-2025--06--18-purple)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 **A MoonBit SDK for the [Model Context Protocol](https://modelcontextprotocol.io/) (MCP).**
 
-Build MCP servers and clients in MoonBit — connect to Claude, Cursor, and any MCP-compatible AI agent.
+Build MCP servers and clients in MoonBit with strict JSON-RPC parsing, typed
+content, high-level tools/resources/prompts registries, transport-neutral
+connections, and verification across wasm, wasm-gc, JavaScript, and native.
+
+> **Scope:** the SDK targets MCP revision `2025-06-18`. See the
+> [support matrix](docs/PROTOCOL_SUPPORT.md) for Complete, Core, Constant, and
+> Planned behavior rather than assuming full coverage from an exported type.
 
 ## 30-Second Quick Start
 
@@ -30,10 +37,7 @@ fn main {
     "echo",
     @mcp.JsonSchema::object() |> @mcp.JsonSchema::string("message"),
     fn(args) {
-      let msg = @mcp.ContentBlock::as_text(
-        @mcp.ContentBlock::TextContent("echo: " + args.stringify(), None)
-      ).or_else(fn() { "no args" })
-      @mcp.CallToolResult::text(msg)
+      @mcp.CallToolResult::text("echo: " + args.stringify())
     },
   )
   // In a real server, you'd drive server.process_message(raw) from a transport.
@@ -98,8 +102,8 @@ moon run cmd/mcp-loopback --target native
 |-------|---------|
 | **Protocol** | JSON-RPC 2.0 parsing/encoding, MCP message types (Request/Response/Notification) |
 | **Types** | ContentBlock (text/image/audio/resource), Tool, Resource, Prompt, LogMessage |
-| **Server** | Low-level `Server` (handler registry + dispatch) + high-level `McpServer` builder |
-| **Client** | Low-level `Client` (request-id allocation, request builders, response correlation, initialize handshake) |
+| **Server** | Low-level dispatch plus high-level tool, concrete-resource, and prompt registries |
+| **Client** | Request-id allocation, response correlation, initialize, tools, resources, prompts, and logging builders |
 | **Schema** | JSON Schema builder for tool input/output schemas |
 | **Transport** | `trait Transport` abstraction + `InMemoryTransport` (tests) + `BufferedTransport` |
 | **Framing** | `MessageBuffer` — reassembles a chunked byte stream into newline-delimited JSON-RPC messages (stdio / streamable-HTTP) |
@@ -138,20 +142,50 @@ moon run cmd/mcp-loopback --target native
 
 Zero overlap. The two can coexist: parse `.proto` with moon_proto, expose as MCP resources with moonbit_mcp.
 
-## Development
+## Verification
+
+Run the same release gate as CI:
 
 ```bash
-moon fmt --check          # format check
-moon check --deny-warn    # type check (warnings as errors)
-moon test --deny-warn     # run tests
-moon test --target all    # wasm / wasm-gc / js / native
-moon info                 # regenerate public interface snapshot
+./scripts/release_gate.sh
 ```
 
-## Test Results
+It verifies formatting, generated interfaces, warnings-as-errors, build, **161
+MoonBit tests on every target**, 37 Python verification-tool tests, 15 black-box
+MCP cases, and the tracked-file engineering evidence floor.
 
-- `moon test --target all`: **52/52 passed** on all 4 targets
-- `moon check --deny-warn`: 0 warnings, 0 errors
+Focused commands:
+
+```bash
+moon test --deny-warn
+moon test --target all
+python3 scripts/mcp_conformance.py run -- \
+  moon run cmd/mcp-echo --target native
+python3 scripts/project_audit.py --format markdown
+```
+
+## Engineering Evidence
+
+The v0.7.0 uplift brings the history to **95 focused commits**, expands MoonBit
+source/test/example code from 2,643 to more than 4,000 nonblank lines, increases
+the MoonBit suite from 52 to 161 executed tests, and adds executable conformance,
+repository audit tooling, CI evidence artifacts, governance templates, and a
+review-oriented documentation set. Counts come from tracked files only; ignored
+build output cannot inflate them.
+
+See [Engineering Report](docs/ENGINEERING_REPORT.md) for baseline/delta details.
+
+## Documentation
+
+- [Architecture](docs/ARCHITECTURE.md)
+- [Protocol support matrix](docs/PROTOCOL_SUPPORT.md)
+- [Transport integration](docs/TRANSPORTS.md)
+- [Testing and verification](docs/TESTING.md)
+- [Security model](docs/SECURITY_MODEL.md)
+- [Development guide](docs/DEVELOPMENT.md)
+- [Reviewer playbook](docs/REVIEWER_PLAYBOOK.md)
+- [Release process](docs/RELEASE.md)
+- [Contributing](CONTRIBUTING.md) and [security reporting](SECURITY.md)
 
 ## License
 

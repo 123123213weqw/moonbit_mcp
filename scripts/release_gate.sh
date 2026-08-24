@@ -33,6 +33,9 @@ moon test --target all
 step "Python syntax"
 python3 -m compileall -q scripts
 
+step "Python verification-tool tests"
+python3 -m unittest discover -s tests/python -v
+
 step "conformance fixture schema"
 python3 scripts/mcp_conformance.py validate
 

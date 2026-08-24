@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-08-24
+
+### Added
+- High-level concrete resource registration/read callbacks and prompt
+  registration/render callbacks on `McpServer`.
+- Client and connection builders for resource list/read/subscribe, prompt
+  list/get, logging level, and generic notifications.
+- Fluent resource, resource-template, prompt, prompt-message, and prompt-result
+  constructors.
+- 15-case black-box subprocess conformance corpus and reusable standard-library
+  Python runner with JSON evidence reports.
+- Tracked-file engineering audit with reviewable thresholds based on the
+  `moon_proto` engineering standard.
+- Architecture, support, transport, testing, security, development, release,
+  reviewer, contribution, conduct, and reporting documentation.
+- Issue/PR templates and CI-uploaded engineering/conformance evidence.
+- 37 unit tests for the Python verification tools.
+
+### Changed
+- JSON-RPC decoding is strict about protocol version, identifier type, parameter
+  shape, response result/error exclusivity, integer error codes, and error data.
+- `McpServer` now advertises tools, resources, and prompts capabilities.
+- CI runs the complete release gate with full Git history and pinned stable
+  GitHub action majors.
+- Package version raised to `0.7.0`.
+
+### Fixed
+- Missing `tools/call` names or arguments now return typed invalid-parameter
+  errors instead of aborting on direct map indexing.
+- The reference echo callback handles absent `message` safely.
+- JSON-RPC error response `data` is retained during decoding.
+
+### Verification
+- 161 MoonBit tests pass on wasm, wasm-gc, JavaScript, and native.
+- 37 Python verification-tool tests pass.
+- 15/15 black-box MCP cases pass against `cmd/mcp-echo`.
+- The repository reaches the 95-commit reference-history floor without filler
+  commits; each uplift commit is a focused feature, fix, test, documentation, or
+  automation change.
+
 ## [0.6.0]
 
 ### Added

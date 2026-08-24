@@ -112,8 +112,16 @@ pub(all) struct Client {
   mut notifications : Array[RpcNotification]
 }
 pub fn Client::build_initialize(Self) -> (RequestId, String)
+pub fn Client::build_initialized(Self) -> String
+pub fn Client::build_logging_set_level(Self, LogLevel) -> (RequestId, String)
+pub fn Client::build_notification(Self, String, Json?) -> String
 pub fn Client::build_ping(Self) -> (RequestId, String)
+pub fn Client::build_prompts_get(Self, String, Json) -> (RequestId, String)
+pub fn Client::build_prompts_list(Self, String?) -> (RequestId, String)
 pub fn Client::build_request(Self, String, Json?) -> (RequestId, String)
+pub fn Client::build_resources_list(Self, String?) -> (RequestId, String)
+pub fn Client::build_resources_read(Self, String) -> (RequestId, String)
+pub fn Client::build_resources_subscribe(Self, String) -> (RequestId, String)
 pub fn Client::build_tools_call(Self, String, Json) -> (RequestId, String)
 pub fn Client::build_tools_list(Self) -> (RequestId, String)
 pub fn Client::complete_initialize(Self, String) -> Result[Implementation, McpError]
@@ -138,9 +146,15 @@ pub fn[T] ClientConnection::receive(Self[T], String) -> Unit
 pub fn[T] ClientConnection::receive_line(Self[T], String) -> Result[Unit, McpError]
 pub fn[T : Transport] ClientConnection::send_initialize(Self[T]) -> RequestId
 pub fn[T : Transport] ClientConnection::send_initialized(Self[T]) -> Unit
+pub fn[T : Transport] ClientConnection::send_logging_set_level(Self[T], LogLevel) -> RequestId
 pub fn[T : Transport] ClientConnection::send_ping(Self[T]) -> RequestId
+pub fn[T : Transport] ClientConnection::send_prompts_get(Self[T], String, Json) -> RequestId
+pub fn[T : Transport] ClientConnection::send_prompts_list(Self[T], String?) -> RequestId
 pub fn[T : Transport] ClientConnection::send_raw(Self[T], String) -> Unit
 pub fn[T : Transport] ClientConnection::send_request(Self[T], String, Json?) -> RequestId
+pub fn[T : Transport] ClientConnection::send_resources_list(Self[T], String?) -> RequestId
+pub fn[T : Transport] ClientConnection::send_resources_read(Self[T], String) -> RequestId
+pub fn[T : Transport] ClientConnection::send_resources_subscribe(Self[T], String) -> RequestId
 pub fn[T : Transport] ClientConnection::send_tools_call(Self[T], String, Json) -> RequestId
 pub fn[T : Transport] ClientConnection::send_tools_list(Self[T]) -> RequestId
 pub fn[T] ClientConnection::take_initialize(Self[T], RequestId) -> Result[Implementation, McpError]
@@ -162,9 +176,11 @@ pub fn ContentBlock::as_text(Self) -> String?
 pub fn ContentBlock::to_json(Self) -> Json
 
 pub(all) struct GetPromptResult {
-  description : String?
+  mut description : String?
   messages : Array[PromptMessage]
 } derive(Eq, @debug.Debug)
+pub fn GetPromptResult::describe(Self, String) -> Self
+pub fn GetPromptResult::new(Array[PromptMessage]) -> Self
 pub fn GetPromptResult::to_json(Self) -> Json
 
 pub(all) struct Implementation {
@@ -235,10 +251,16 @@ pub(all) struct McpServer {
   server : Server
   mut tools : Array[Tool]
   mut tool_callbacks : Map[String, (Json) -> CallToolResult]
+  mut resources : Array[Resource]
+  mut resource_callbacks : Map[String, (String) -> ReadResourceResult]
+  mut prompts : Array[Prompt]
+  mut prompt_callbacks : Map[String, (Json) -> GetPromptResult]
 }
 pub fn McpServer::inner(Self) -> Server
 pub fn McpServer::new(String, String) -> Self
 pub fn McpServer::process_message(Self, String) -> String?
+pub fn McpServer::prompt(Self, Prompt, (Json) -> GetPromptResult) -> Self
+pub fn McpServer::resource(Self, Resource, (String) -> ReadResourceResult) -> Self
 pub fn McpServer::tool(Self, String, JsonSchema, (Json) -> CallToolResult) -> Self
 pub fn McpServer::tool_desc(Self, String, String, JsonSchema, (Json) -> CallToolResult) -> Self
 
@@ -259,13 +281,16 @@ pub fn[T] Paginated::with_cursor(Array[T], String) -> Self[T]
 
 pub(all) struct Prompt {
   name : String
-  title : String?
-  description : String?
+  mut title : String?
+  mut description : String?
   arguments : Array[PromptArgument]
 } derive(Eq, @debug.Debug)
 pub fn Prompt::arg(Self, String, Bool) -> Self
+pub fn Prompt::arg_desc(Self, String, String, Bool) -> Self
+pub fn Prompt::describe(Self, String) -> Self
 pub fn Prompt::new(String) -> Self
 pub fn Prompt::to_json(Self) -> Json
+pub fn Prompt::with_title(Self, String) -> Self
 
 pub(all) struct PromptArgument {
   name : String
@@ -277,6 +302,8 @@ pub(all) struct PromptMessage {
   role : PromptRole
   content : ContentBlock
 } derive(Eq, @debug.Debug)
+pub fn PromptMessage::assistant(String) -> Self
+pub fn PromptMessage::user(String) -> Self
 
 pub(all) enum PromptRole {
   RoleUser
@@ -286,6 +313,7 @@ pub(all) enum PromptRole {
 pub(all) struct ReadResourceResult {
   contents : Array[ResourceContents]
 } derive(Eq, @debug.Debug)
+pub fn ReadResourceResult::new(Array[ResourceContents]) -> Self
 pub fn ReadResourceResult::text(String, String) -> Self
 pub fn ReadResourceResult::to_json(Self) -> Json
 
@@ -297,12 +325,15 @@ pub(all) enum RequestId {
 pub(all) struct Resource {
   uri : String
   name : String
-  title : String?
-  description : String?
-  mime_type : String?
+  mut title : String?
+  mut description : String?
+  mut mime_type : String?
 } derive(Eq, @debug.Debug)
+pub fn Resource::describe(Self, String) -> Self
 pub fn Resource::new(String, String) -> Self
 pub fn Resource::to_json(Self) -> Json
+pub fn Resource::with_mime_type(Self, String) -> Self
+pub fn Resource::with_title(Self, String) -> Self
 
 pub(all) enum ResourceContents {
   TextResourceContents(String, String?, String)
@@ -313,10 +344,15 @@ pub fn ResourceContents::to_json(Self) -> Json
 pub(all) struct ResourceTemplate {
   uri_template : String
   name : String
-  title : String?
-  description : String?
-  mime_type : String?
+  mut title : String?
+  mut description : String?
+  mut mime_type : String?
 } derive(Eq, @debug.Debug)
+pub fn ResourceTemplate::describe(Self, String) -> Self
+pub fn ResourceTemplate::new(String, String) -> Self
+pub fn ResourceTemplate::to_json(Self) -> Json
+pub fn ResourceTemplate::with_mime_type(Self, String) -> Self
+pub fn ResourceTemplate::with_title(Self, String) -> Self
 
 pub(all) struct RpcErrorObject {
   code : Int
@@ -374,6 +410,8 @@ pub(all) struct Server {
 pub fn Server::handle_method(Self, String, (Json, ServerContext) -> Result[Json, McpError]) -> Self
 pub fn Server::new(String, String) -> Self
 pub fn Server::process_message(Self, String) -> String?
+pub fn Server::with_prompts(Self) -> Self
+pub fn Server::with_resources(Self) -> Self
 pub fn Server::with_tools(Self) -> Self
 
 pub(all) struct ServerCapabilities {
@@ -427,6 +465,10 @@ pub fn ToolAnnotations::new() -> Self
 pub type MessageHandler = (String) -> Unit
 
 pub type MethodHandler = (Json, ServerContext) -> Result[Json, McpError]
+
+pub type PromptCallback = (Json) -> GetPromptResult
+
+pub type ResourceCallback = (String) -> ReadResourceResult
 
 pub type ToolCallback = (Json) -> CallToolResult
 
